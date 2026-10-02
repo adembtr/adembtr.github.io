@@ -13,6 +13,11 @@ fs.mkdirSync(QA, { recursive: true });
 const BASE = process.env.QA_BASE || 'http://localhost:4173';
 const mode = process.argv[2] || 'all';
 const problems = [];
+const { execSync } = await import('node:child_process');
+async function status(url) {
+  try { const r = await fetch(url, { method: 'GET', redirect: 'follow', headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128 Safari/537.36' }, signal: AbortSignal.timeout(15000) }); return r.status; }
+  catch (_) { try { return Number(execSync(`curl -s -o /dev/null -w '%{http_code}' -L --max-time 20 -A 'Mozilla/5.0' '${url}'`).toString().trim()); } catch (__) { return 0; } }
+}
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 
@@ -20,7 +25,12 @@ async function pageWithLogs(context) {
   const page = await context.newPage();
   page.on('console', (m) => { if (m.type() === 'error') problems.push(`console.error: ${m.text()}`); });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
-  page.on('requestfailed', (r) => problems.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`));
+  page.on('requestfailed', (r) => {
+    const err = r.failure()?.errorText || '';
+    // media elements abort and restart their own range requests; that is normal, not a failure
+    if (r.resourceType() === 'media' && err.includes('ERR_ABORTED')) return;
+    problems.push(`requestfailed: ${r.url()} ${err}`);
+  });
   page.on('response', (r) => { if (r.status() >= 400 && r.url().startsWith(BASE)) problems.push(`http ${r.status()}: ${r.url()}`); });
   return page;
 }
@@ -115,8 +125,8 @@ if (mode === 'all' || mode === 'shots') {
         } else if (href.startsWith('mailto:')) {
           continue;
         } else if (href.startsWith('/')) {
-          const r = await fetch(BASE + href, { method: 'GET' });
-          if (r.status >= 400) problems.push(`internal link ${href} -> ${r.status}`);
+          const code = await status(BASE + href);
+          if (code >= 400 || code === 0) problems.push(`internal link ${href} -> ${code}`);
         } else if (href.includes('linkedin.com')) {
           console.log('link skipped (LinkedIn blocks scripted fetches; verified with curl -> 999) ' + href);
         } else {
@@ -137,7 +147,7 @@ if (mode === 'all' || mode === 'shots') {
       void dlgLinks;
       // media files
       for (const f of ['/assets/cloud/portrait_100k.bin', '/assets/cloud/portrait_30k.bin', '/assets/pdf/Adem_Batur_CV.pdf', '/og.png', '/sitemap.xml', '/robots.txt', '/favicon.svg', '/favicon.png', '/apple-touch-icon.png', '/404.html', '/assets/img/portrait_cloud.webp']) {
-        const r = await fetch(BASE + f); if (r.status >= 400) problems.push(`asset ${f} -> ${r.status}`);
+        const code = await status(BASE + f); if (code >= 400 || code === 0) problems.push(`asset ${f} -> ${code}`);
       }
     }
     await ctx.close();
