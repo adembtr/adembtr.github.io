@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Adem Batur — CV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 9mm 11mm 9mm 11mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #15181f; font-size: 8.9pt; line-height: 1.32; }
+  a { color: inherit; text-decoration: none; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; border-bottom: 1.5px solid #15181f; padding-bottom: 6px; margin-bottom: 8px; }
+  h1 { font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 24pt; letter-spacing: -0.02em; margin: 0; line-height: 1; }
+  .role { font-size: 9.6pt; color: #3c4250; margin-top: 4px; }
+  .contact { text-align: right; font-size: 8.4pt; color: #3c4250; line-height: 1.5; }
+  .contact b { color: #15181f; font-weight: 600; }
+  h2 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 10pt; letter-spacing: 0.02em; text-transform: uppercase; margin: 6px 0 3px; padding-bottom: 2px; border-bottom: 1px solid #c9ccd4; color: #15181f; }
+  p { margin: 0 0 4px; }
+  ul { margin: 2px 0 4px; padding-left: 13px; }
+  li { margin: 0 0 1.8px; }
+  .item { margin-bottom: 4px; }
+  .item-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .item-head b { font-weight: 600; }
+  .when { font-size: 8.4pt; color: #5a6070; white-space: nowrap; }
+  .sub { color: #3c4250; font-size: 8.8pt; }
+  .stack { color: #5a6070; font-size: 8.3pt; }
+  .two { display: block; }
+  .skills p { margin-bottom: 2.4px; }
+  .skills b { font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Adem Batur</h1>
+    <div class="role">Computer Engineering Student — AI · Computer Vision · Mobile Development</div>
+  </div>
+  <div class="contact">
+    Kocaeli, Türkiye · <b>baturadem09@gmail.com</b><br>
+    <a href="https://github.com/adembtr">github.com/adembtr</a> · <a href="https://www.linkedin.com/in/adem-batur-652188265">linkedin.com/in/adem-batur-652188265</a><br>
+    <a href="https://adembtr.github.io/">adembtr.github.io</a>
+  </div>
+</header>
+
+<h2>Profile</h2>
+<p>Third-year Computer Engineering student at Sakarya University (GPA 3.48/4.00), also completing a minor in Control and Automation. I build end-to-end computer vision systems with Python and PyTorch, and Flutter mobile apps with AI coding agents. Finalist in TEKNOFEST 2026 AI in Aviation and principal investigator of a TÜBİTAK 2209-B funded project. Looking for a compulsory or part-time internship in software development, AI, mobile or data.</p>
+
+<h2>Education</h2>
+<div class="item">
+  <div class="item-head"><b>Sakarya University — B.Sc. Computer Engineering</b><span class="when">2024 – 2028 (expected) · GPA 3.48 / 4.00</span></div>
+  <div class="sub">High Honor List (Fall 2024–25, Fall 2025–26) · Honor List (Spring 2024–25, Spring 2025–26)</div>
+</div>
+<div class="item">
+  <div class="item-head"><b>Sakarya University — Minor in Electrical &amp; Electronics Engineering: Control and Automation</b><span class="when">2026 – present</span></div>
+  <div class="sub">Relevant courses: Data Structures · Database Management Systems · Introduction to Programming (C++) · Web Technologies · Automatic Control</div>
+</div>
+
+<h2>Competitions and Awards</h2>
+<ul>
+  <li><b>TEKNOFEST 2026 AI in Aviation — Finalist</b> (2026). Captain of the two-person team NURON; I selected the models and wrote the algorithms. Finished the online simulation round, which drew 150+ teams, in 2nd place and reached the on-site finals.</li>
+  <li><b>TÜBİTAK 2209-B Industry-Oriented Undergraduate Research Grant — funded</b> (2026). Principal investigator of “Ghost Cursor”, an AI agent that operates multiple screens from voice commands (Whisper speech recognition, LLM action planning, UI automation). Advisor: Prof. Dr. Cemil Öz · industry advisor: Datazza.</li>
+  <li><b>TEKNOFEST 2026 5G &amp; AI Smart Road Safety</b> (2026) — preliminary design report 84 points (threshold 64); scored 103.29 in the second stage, 1.71 points short of the 105 threshold, and did not reach the finals.</li>
+</ul>
+
+<h2>Projects</h2>
+<div class="item">
+  <div class="item-head"><b>NURON — Perception and GPS-Denied Positioning for UAV Imagery</b><span class="when">2025 – 2026</span></div>
+  <div class="stack">Python · PyTorch · YOLO26 · DPVO · SAM 2.1 · DINOv3 · github.com/adembtr/nuron-teknofest-2026</div>
+  <ul>
+    <li>Solves object detection, GPS-denied position estimation and reference-object matching on one frame stream, on a single 8 GB GPU, at 0.52–0.86 s per frame (22–36% of the time budget).</li>
+    <li>On a local replica of the competition server: ~1.6 m horizontal error over the 1,800 frames after GPS is cut; 98.8% precision in reference matching; vehicle-motion accuracy raised from 0.946 to 0.985.</li>
+    <li>Traced failures to their root cause: making the inter-process frame handoff atomic cut corrupt frames from 9% to 0%, and a calibration confidence gate cut the worst session’s error from 982 m to 6.4 m.</li>
+  </ul>
+</div>
+<div class="item">
+  <div class="item-head"><b>Dotnote — Note-Taking App for Tablets and Phones</b><span class="when">2026</span></div>
+  <div class="stack">Flutter · Dart · Riverpod · Drift (SQLite) · go_router · Android / Web · Claude Code · elifapps.com/apps/dotnote</div>
+  <ul>
+    <li>S Pen handwriting, audio/video placed on the page, A4 pages, PDF annotation, PDF/DOCX export, reminders, home-screen widgets and Google Drive backup; 10 languages including right-to-left Arabic.</li>
+    <li>Built by directing Claude Code agents. I owned the requirements, a competitor analysis of 9 apps, the architecture (a shared package reused across apps; Screen → Provider → Repository → DAO) and on-device testing.</li>
+    <li>700+ automated tests, 110+ builds tested on a tablet. I use it daily for my lecture notes; a Google Play release is planned.</li>
+  </ul>
+</div>
+<div class="item">
+  <div class="item-head"><b>Smart Road Safety and Turkish Licence-Plate Recognition</b><span class="when">2026</span></div>
+  <div class="stack">YOLO26-OBB · EfficientNet · fast-plate-ocr · ONNX · github.com/adembtr/turkish-plate-ocr</div>
+  <ul>
+    <li>End-to-end pipeline around a single-pass vehicle, plate and driver detector: plate deskewing and reading, vehicle type/colour and driver-behaviour classification.</li>
+    <li>Benchmarked three OCR engines on the same 95 plates and picked the best (EasyOCR 10, PaddleOCR 52, fast-plate-ocr 74 correct; ~455 plates/s on CPU).</li>
+  </ul>
+</div>
+<div class="item">
+  <div class="item-head"><b>Other Projects</b><span class="when">28 public repositories · github.com/adembtr</span></div>
+  <ul>
+    <li>ARC-AGI-3 agents — learn rules from their own actions, with no LLM or dataset; cleared 7 levels on 25 games (random agent: 2).</li>
+    <li>Library Management System — book, member and loan management with a reporting dashboard (PostgreSQL, Streamlit, Plotly; DBMS course).</li>
+    <li>MathTransformer (~0.84M-parameter transformer learning arithmetic from scratch) · RAG document Q&amp;A (ChromaDB) · n8n video automation · VocabForge (JavaScript vocabulary app) · websites for small businesses (SEO, Netlify).</li>
+  </ul>
+</div>
+
+<h2>Skills and Languages</h2>
+<div class="skills two">
+  <div>
+    <p><b>Programming:</b> Python, C++, Dart, JavaScript, SQL, C, C#, Java</p>
+    <p><b>AI / Vision:</b> PyTorch, OpenCV, Ultralytics YOLO, SAM 2, DINOv3, visual odometry (DPVO), OCR, RAG, LLM integration</p>
+  </div>
+  <div>
+    <p><b>Mobile, Web, Data:</b> Flutter, Riverpod, HTML/CSS/JavaScript, Streamlit · PostgreSQL, SQLite, ChromaDB, FAISS</p>
+    <p><b>Tools:</b> Git/GitHub, Linux, CUDA, Conda, Android SDK / adb, n8n, LaTeX, Claude Code</p>
+    <p><b>Languages:</b> Turkish (native) · English (professional working proficiency)</p>
+  </div>
+</div>
+</body>
+</html>

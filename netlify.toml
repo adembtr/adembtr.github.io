@@ -1,0 +1,21 @@
+# Netlify configuration — deploy with `npx netlify-cli deploy --prod` after `netlify login`.
+# The built site lives in docs/ (also served by GitHub Pages from the main branch).
+[build]
+  command = "npm ci && npm run build"
+  publish = "docs"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
