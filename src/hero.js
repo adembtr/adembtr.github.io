@@ -256,7 +256,7 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
 
     // slow auto-sway when the pointer has been still for a while; the drag offset eases back
     const idle = reduced ? 0 : THREE.MathUtils.clamp((now - lastInput - 2000) / 3000, 0, 1);
-    const swayY = Math.sin(t * 0.26) * 0.62 * idle;
+    const swayY = Math.sin(t * 0.26) * 0.35 * idle;
     const swayX = Math.cos(t * 0.19) * 0.05 * idle;
     if (!dragging) dragYaw *= Math.max(0, 1 - dt * 0.35);
     const ty = THREE.MathUtils.clamp(THREE.MathUtils.clamp(target.x * MAX_Y, -MAX_Y, MAX_Y) * (1 - idle) + swayY + dragYaw, -MAX_TOTAL, MAX_TOTAL);

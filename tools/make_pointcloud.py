@@ -207,8 +207,8 @@ for y, (xl, xr) in rows_main.items():
 # fill gaps so derivatives are defined
 for arr in (hw_y, xc_y):
     arr[:] = np.interp(np.arange(H), ys_main, arr[ys_main])
-hw_s = cv2.GaussianBlur(hw_y.reshape(-1, 1), (0, 0), 2.0).ravel()
-xc_s = cv2.GaussianBlur(xc_y.reshape(-1, 1), (0, 0), 2.0).ravel()
+hw_s = cv2.GaussianBlur(hw_y.reshape(-1, 1), (0, 0), 10.0).ravel()   # continuous cross-sections
+xc_s = cv2.GaussianBlur(xc_y.reshape(-1, 1), (0, 0), 10.0).ravel()
 dhw = np.gradient(hw_s)
 dxc = np.gradient(xc_s)
 # per-row part fractions -> depth factor k(y), back fullness bk(y), head weight
@@ -256,11 +256,8 @@ z0_px = z0_units / UPP
 dz0 = np.gradient(z0_px)
 print(f"k(y) head rows ~{k_y[y0 + (y1 - y0) // 5]:.2f}, torso rows ~{k_y[y1 - (y1 - y0) // 8]:.2f}; z0 range {z0_units.min():.2f}..{z0_units.max():.2f}", flush=True)
 
-# relief residual within the row (nose, lips, eye sockets): modulates the front sheet
-r_row = np.zeros(H)
-for y, (xl, xr) in rows_main.items():
-    r_row[y] = np.median(r[y, xl:xr + 1])
-r_res = np.clip(r - r_row[:, None], -0.25, 0.25).astype(np.float32)
+# relief residual against the smoothed row profile (nose, lips, eye sockets): modulates the front sheet
+r_res = np.clip(r - z0r[:, None], -0.25, 0.25).astype(np.float32)
 BETA = 0.8  # +20% bulge at the nose, -20% in the sockets, relative to the local ellipse depth
 
 # hair colour per row (median of confident hair pixels) and hair fraction per row
@@ -323,13 +320,41 @@ for y, (xl, xr) in rows_main.items():
 for arr in (rim_l, rim_r, inner_l, inner_r):
     for ch in range(3):
         arr[~valid, ch] = np.interp(np.nonzero(~valid)[0], ys_main, arr[ys_main, ch])
-    arr[:] = cv2.GaussianBlur(arr, (0, 0), sigmaX=0.1, sigmaY=H / 150.0)
+    arr[:] = cv2.GaussianBlur(arr, (0, 0), sigmaX=0.1, sigmaY=H / 100.0)
 for arr in (skin_l, skin_r):
     arr[~valid] = np.interp(np.nonzero(~valid)[0], ys_main, arr[ys_main])
-    arr[:] = cv2.GaussianBlur(arr.reshape(-1, 1), (0, 0), H / 150.0).ravel()
+    arr[:] = cv2.GaussianBlur(arr.reshape(-1, 1), (0, 0), H / 60.0).ravel()
 # skin at the rim on head rows = ear / cheek edge: blend it toward the cheek colour further in
 ear_w_l = np.clip((skin_l - 0.35) / 0.3, 0, 1) * hb
 ear_w_r = np.clip((skin_r - 0.35) / 0.3, 0, 1) * hb
+
+
+
+def lift(col):
+    lum = col @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+    col = np.clip(lum[:, None] + (col - lum[:, None]) * 1.12, 0, 1)
+    return np.clip((col - 0.5) * 1.06 + 0.5, 0, 1)
+
+
+# side/back colour as a (row x angle) texture: rim colour near the rim, hair/skin/clothes further back,
+# darkened toward the back, then blurred along rows and angle so nothing streaks
+NTH = 128
+thb = np.linspace(0, np.pi, NTH)
+cb, sb = np.cos(thb), np.sin(thb)
+left_all = (rim_l * (1 - ear_w_l[:, None] * 0.8) + inner_l * ear_w_l[:, None] * 0.8) / 255.0
+right_all = (rim_r * (1 - ear_w_r[:, None] * 0.8) + inner_r * ear_w_r[:, None] * 0.8) / 255.0
+mixb = ((cb + 1) / 2)[None, :, None]
+rim_tex = left_all[:, None, :] * (1 - mixb) + right_all[:, None, :] * mixb
+whr = w_hair_y[:, None, None]
+back0 = rim_tex * (1 - whr) + (hair_col_y / 255.0)[:, None, :] * whr
+tbb = np.clip(sb / 0.35, 0, 1)
+tbb = (tbb * tbb * (3 - 2 * tbb))[None, :, None]
+dark = np.where(w_hair_y[:, None] > 0.5, 0.86 - 0.30 * sb[None, :], 0.90 - 0.24 * sb[None, :])[..., None]
+side_tex = (rim_tex * (1 - tbb) + back0 * tbb) * dark
+side_tex = cv2.GaussianBlur(side_tex.astype(np.float32), (0, 0), sigmaX=2.5, sigmaY=H / 55.0)
+side_tex = lift(side_tex.reshape(-1, 3)).reshape(H, NTH, 3)
+rgb_vy = cv2.GaussianBlur(rgb_np.astype(np.float32) * alpha[..., None], (0, 0), sigmaX=0.5, sigmaY=8.0)
+rgb_vy = np.clip(rgb_vy / (cv2.GaussianBlur(alpha, (0, 0), sigmaX=0.5, sigmaY=8.0)[..., None] + 1e-6), 0, 255)
 
 # ----------------------------------------------------------------------------- sampling
 run_arr = np.array(runs, dtype=np.int64)
@@ -352,12 +377,6 @@ w_flap = rflap * fade
 flap_share = float(w_flap.sum() * 2 / (np.pi / 2 * (rhw_x * (1 + rk) / 2 * fade).sum() + w_flap.sum() * 2))
 w_flap /= max(w_flap.sum(), 1e-9)
 print(f"flap share of the front area: {flap_share:.3f}", flush=True)
-
-
-def lift(col):
-    lum = col @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
-    col = np.clip(lum[:, None] + (col - lum[:, None]) * 1.12, 0, 1)
-    return np.clip((col - 0.5) * 1.06 + 0.5, 0, 1)
 
 
 def finish(x, y, z_px, nrm, col):
@@ -412,32 +431,18 @@ def sample_sheet(n, front):
     if front:
         z_px = z0_px[yi] + t_px * (1 + BETA * r_res[yi, xi])
         nrm = np.stack([kk * c, -(dz0[yi] * s + kk * dhw_r + kk * dxc_r * c), s], axis=1)
-        col = rgb_np[yi, xi].astype(np.float32) / 255.0
-        graze = np.clip((0.58 - s) / 0.5, 0, 1)                    # 1 at the rim, 0 past ~35 deg
-        graze = graze * graze * (3 - 2 * graze)
-        ear_w = np.where(c < 0, ear_w_l[yi], ear_w_r[yi]) * graze * 0.8
-        inner = np.where((c < 0)[:, None], inner_l[yi], inner_r[yi]) / 255.0
-        col = lift(np.clip(col * (1 - ear_w[:, None]) + inner * ear_w[:, None], 0, 1))
+        c_px = lift(rgb_np[yi, xi].astype(np.float32) / 255.0)
+        c_vy = lift(rgb_vy[yi, xi] / 255.0)
+        c_side = np.where((c < 0)[:, None], side_tex[yi, NTH - 1], side_tex[yi, 0])
+        g = np.clip((0.64 - s) / 0.5, 0, 1)                        # 1 at the rim, 0 past ~40 deg
+        g = (g * g * (3 - 2 * g))[:, None]
+        col = c_px * (1 - g) + c_vy * g                            # photo, vertically smoothed at the edge
+        col = np.clip(col * (1 - 0.6 * g) + c_side * (0.6 * g), 0, 1)  # ... and blended into the side colour
     else:
         z_px = z0_px[yi] - bk * t_px
         nrm = np.stack([bk * kk * c, dz0[yi] * s - bk * (kk * dhw_r + kk * dxc_r * c), -s], axis=1)
-        if True:
-            left = (rim_l[yi] * (1 - ear_w_l[yi][:, None] * 0.8) + inner_l[yi] * ear_w_l[yi][:, None] * 0.8) / 255.0
-            right = (rim_r[yi] * (1 - ear_w_r[yi][:, None] * 0.8) + inner_r[yi] * ear_w_r[yi][:, None] * 0.8) / 255.0
-            small = ~rmain[ridx]                                     # tufts: their own rim colour
-            if small.any():
-                ins2 = np.clip(rxl[ridx[small]] + 2, 0, W - 1)
-                left[small] = rim_src[yi[small], ins2] / 255.0
-                right[small] = rim_src[yi[small], np.clip(rxr[ridx[small]] - 2, 0, W - 1)] / 255.0
-        mix = ((c + 1) / 2)[:, None]
-        rim_col = left * (1 - mix) + right * mix
-        # behind the head: hair; behind the neck/torso: the rim colour (skin, clothes)
-        back_col = rim_col * (1 - w_hair_y[yi][:, None]) + (hair_col_y[yi] / 255.0) * w_hair_y[yi][:, None]
-        tb = np.clip(s / 0.35, 0, 1)[:, None]
-        tb = tb * tb * (3 - 2 * tb)
-        col = rim_col * (1 - tb) + back_col * tb
-        dark = np.where(w_hair_y[yi] > 0.5, 0.86 - 0.30 * s, 0.90 - 0.24 * s)[:, None]
-        col = np.clip(col * dark * (1 + rng.normal(0, 0.025, (n, 1))), 0, 1)
+        j = np.clip(np.round(th / np.pi * (NTH - 1)).astype(int), 0, NTH - 1)
+        col = np.clip(side_tex[yi, j] * (1 + rng.normal(0, 0.02, (n, 1))), 0, 1)
     return finish(x, y, z_px, nrm, col)
 
 
