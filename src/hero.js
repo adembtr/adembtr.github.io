@@ -107,7 +107,7 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
   const small = innerWidth < 760;
   const lowEnd = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory && navigator.deviceMemory <= 4);
   const useLOD = small || lowEnd;
-  const url = useLOD ? '/assets/cloud/portrait_30k.bin' : '/assets/cloud/portrait_100k.bin';
+  const url = useLOD ? '/assets/cloud/portrait_60k.bin' : '/assets/cloud/portrait_100k.bin';
 
   let data;
   try {
@@ -177,7 +177,12 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
     uniforms.uPixelRatio.value = renderer.getPixelRatio();
-    uniforms.uSize.value = THREE.MathUtils.clamp(h / 380, 1.7, 3.0) * (useLOD ? 1.35 : 1);
+    // point size from coverage: the bust (2 x 2.2 units, ~55% filled) should be tiled by its points
+    const dpr = renderer.getPixelRatio();
+    const pxPerUnit = (h * dpr) / (2 * dist * Math.tan(vfov / 2));
+    const bustArea = 2 * pxPerUnit * 2.2 * pxPerUnit * 0.55;
+    const wanted = 1.3 * Math.sqrt(bustArea / data.count);          // device px per point
+    uniforms.uSize.value = THREE.MathUtils.clamp(wanted / (dpr * (3.2 / dist) * 1.1), 1.2, 7);
   }
   layout();
   new ResizeObserver(layout).observe(wrap);

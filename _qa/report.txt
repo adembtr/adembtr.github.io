@@ -1,1 +1,1 @@
-QA pass against https://adembtr.github.io/ (2026-10-03): no console errors, no horizontal overflow, dialog + language toggle OK, all internal/external links OK (LinkedIn verified with curl -> 999).
+no problems found

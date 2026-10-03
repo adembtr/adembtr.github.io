@@ -45,6 +45,8 @@ if (mode === 'all' || mode === 'og') {
   await page.waitForTimeout(1200);
   await page.screenshot({ path: path.join(ROOT, 'public/og.png') });
   console.log('og.png written');
+  await ctx.close();
+  if (process.argv.includes('--cloud')) {
   // static cloud fallback (transparent)
   const ctx2 = await browser.newContext({ viewport: { width: 1200, height: 1200 }, deviceScaleFactor: 1 });
   const p2 = await pageWithLogs(ctx2);
@@ -53,7 +55,8 @@ if (mode === 'all' || mode === 'og') {
   await p2.waitForTimeout(800);
   await p2.screenshot({ path: path.join(ROOT, 'tools/portrait_cloud.png'), omitBackground: true });
   console.log('portrait_cloud.png written (convert to webp with tools/convert_cloud.py)');
-  await ctx.close(); await ctx2.close();
+  await ctx2.close();
+  }
 }
 
 if (mode === 'all' || mode === 'shots') {
@@ -146,7 +149,7 @@ if (mode === 'all' || mode === 'shots') {
       }
       void dlgLinks;
       // media files
-      for (const f of ['/assets/cloud/portrait_100k.bin', '/assets/cloud/portrait_30k.bin', '/assets/pdf/Adem_Batur_CV.pdf', '/og.png', '/sitemap.xml', '/robots.txt', '/favicon.svg', '/favicon.png', '/apple-touch-icon.png', '/404.html', '/assets/img/portrait_cloud.webp']) {
+      for (const f of ['/assets/cloud/portrait_100k.bin', '/assets/cloud/portrait_60k.bin', '/assets/pdf/Adem_Batur_CV.pdf', '/og.png', '/sitemap.xml', '/robots.txt', '/favicon.svg', '/favicon.png', '/apple-touch-icon.png', '/404.html', '/assets/img/portrait_cloud.webp']) {
         const code = await status(BASE + f); if (code >= 400 || code === 0) problems.push(`asset ${f} -> ${code}`);
       }
     }

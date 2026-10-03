@@ -220,8 +220,8 @@ export const PROJECTS = [
         src: '/assets/video/nuron_session4',
         poster: '/assets/img/poster_nuron_session4.webp',
         alt: {
-          en: 'NURON live dashboard during on-site session 4: detections on the aerial frame, GPS status and the X/Y/Z position estimate over time (12 s excerpt)',
-          tr: 'Yerinde 4. oturumda NURON canlı paneli: hava karesinde tespitler, GPS durumu ve zaman içinde X/Y/Z konum kestirimi (12 sn kesit)',
+          en: 'NURON live dashboard during on-site session 4: the reference object (a roundabout) is found and boxed while vehicles are detected around it; GPS is off and the X/Y/Z estimate runs on visual odometry alone (12 s excerpt)',
+          tr: 'Yerinde 4. oturumda NURON canlı paneli: referans nesne (bir kavşak adası) bulunup kutulanıyor, çevresindeki araçlar tespit ediliyor; GPS kapalı, X/Y/Z kestirimi yalnızca görsel odometriyle (12 sn kesit)',
         },
       },
       {
@@ -318,13 +318,13 @@ export const PROJECTS = [
       { kind: 'site', url: 'https://elifapps.com/apps/dotnote/' },
       { kind: 'site', url: 'https://elifapps.com/', label: 'elifapps.com' },
     ],
-    cover: { type: 'video', src: '/assets/video/dotnote_write', poster: '/assets/img/poster_dotnote_write.webp' },
+    cover: { type: 'video', src: '/assets/video/dotnote_audio', poster: '/assets/img/poster_dotnote_audio.webp' },
     media: [
       {
         type: 'video',
-        src: '/assets/video/dotnote_write',
-        poster: '/assets/img/poster_dotnote_write.webp',
-        alt: { en: 'Dotnote promo film excerpt: handwriting a physics note, typing on paper, highlighting a diagram', tr: 'Dotnote tanıtım filminden kesit: fizik notu yazma, kâğıda yazı yazma, şema üzerinde fosforlu kalem' },
+        src: '/assets/video/dotnote_audio',
+        poster: '/assets/img/poster_dotnote_audio.webp',
+        alt: { en: 'Dotnote promo film excerpt: a lecture recording placed on the page — tap to play, then drag the audio chip anywhere like a line of text', tr: 'Dotnote tanıtım filminden kesit: sayfaya yerleştirilmiş ders kaydı — dokununca çalıyor, ses çipi bir satır yazı gibi sayfada taşınıyor' },
       },
       {
         type: 'video',
@@ -337,37 +337,6 @@ export const PROJECTS = [
       { type: 'image', src: '/assets/img/dotnote_split_view.webp', alt: { en: 'Dotnote: two notes side by side in split view', tr: 'Dotnote: bölünmüş ekranda yan yana iki not' } },
       { type: 'image', src: '/assets/img/dotnote_dark_mode.webp', alt: { en: 'Dotnote in dark mode', tr: 'Dotnote karanlık modda' } },
     ],
-  },
-  {
-    id: 'road-safety',
-    accent: '#8fe3c0',
-    title: { en: 'Smart Road Safety & Turkish plate OCR', tr: 'Akıllı Yol Güvenliği ve Türkçe plaka OCR' },
-    subtitle: {
-      en: 'Vehicle, plate and driver pipeline · TEKNOFEST 2026 5G & AI Smart Road Safety',
-      tr: 'Araç, plaka ve sürücü boru hattı · TEKNOFEST 2026 5G ve Yapay Zekâ ile Akıllı Yol Güvenliği',
-    },
-    period: { en: 'March – September 2026', tr: 'Mart – Eylül 2026' },
-    role: { en: 'AI & computer vision developer, Team NURON.', tr: 'Yapay zekâ ve bilgisayarlı görü geliştiricisi, NURON takımı.' },
-    summary: {
-      en: 'An end-to-end pipeline around a single-pass vehicle, licence-plate and driver detector: plate deskewing and reading, vehicle type/colour and driver-behaviour classification.',
-      tr: 'Tek geçişli araç, plaka ve sürücü dedektörü etrafında uçtan uca bir boru hattı: plaka düzeltme ve okuma, araç tipi/rengi ve sürücü davranışı sınıflandırması.',
-    },
-    bullets: {
-      en: [
-        'Single-pass vehicle, plate and driver detector (YOLO26-OBB); plate deskewing and reading; vehicle type/colour (EfficientNet) and driver-behaviour classification.',
-        'Benchmarked three OCR engines on the same 95 plates and picked the best: EasyOCR 10, PaddleOCR 52, fast-plate-ocr 74 correct; ~455 plates/s on CPU.',
-        'Preliminary design report: 84 points (threshold 64). Second stage: 103.29 points, 1.71 short of the 105 finals threshold.',
-      ],
-      tr: [
-        'Tek geçişli araç, plaka ve sürücü dedektörü (YOLO26-OBB); plaka düzeltme ve okuma; araç tipi/rengi (EfficientNet) ve sürücü davranışı sınıflandırması.',
-        'Aynı 95 plakada üç OCR motoru karşılaştırıldı, en iyisi seçildi: EasyOCR 10, PaddleOCR 52, fast-plate-ocr 74 doğru; CPU’da ~455 plaka/sn.',
-        'Ön tasarım raporu: 84 puan (baraj 64). İkinci aşama: 103,29 puan; 105’lik final barajının 1,71 puan altında.',
-      ],
-    },
-    stack: ['YOLO26-OBB', 'EfficientNet', 'fast-plate-ocr', 'ONNX', 'Python'],
-    links: [{ kind: 'code', url: 'https://github.com/adembtr/turkish-plate-ocr' }],
-    cover: { type: 'image', src: '/assets/img/plate_sample.webp' },
-    media: [{ type: 'image', src: '/assets/img/plate_sample.webp', alt: { en: 'Annotated plate crop read as 10APL513 with 0.97 confidence', tr: '0,97 güvenle 10APL513 olarak okunan plaka kesiti' } }],
   },
   {
     id: 'arc-agi3',
@@ -530,8 +499,8 @@ export const EXPERIENCE = [
     title: { en: 'AI & Computer Vision Developer — Team NURON', tr: 'Yapay Zekâ ve Bilgisayarlı Görü Geliştiricisi — NURON Takımı' },
     org: { en: 'TEKNOFEST 2026 5G & AI Smart Road Safety', tr: 'TEKNOFEST 2026 5G ve Yapay Zekâ ile Akıllı Yol Güvenliği' },
     text: {
-      en: 'Built the vision pipeline around a single-pass vehicle, plate and driver detector; benchmarked three OCR engines on the same 95 plates. Preliminary design report 84 points (threshold 64); second stage 103.29.',
-      tr: 'Tek geçişli araç, plaka ve sürücü dedektörü etrafında görü boru hattını kurdum; aynı 95 plakada üç OCR motorunu karşılaştırdım. Ön tasarım raporu 84 puan (baraj 64); ikinci aşama 103,29.',
+      en: 'Built the vision pipeline around a single-pass vehicle and driver detector (YOLO26-OBB), with vehicle type/colour (EfficientNet) and driver-behaviour classification. Preliminary design report 84 points (threshold 64); second stage 103.29.',
+      tr: 'Tek geçişli araç ve sürücü dedektörü (YOLO26-OBB) etrafında görü boru hattını kurdum; araç tipi/rengi (EfficientNet) ve sürücü davranışı sınıflandırması. Ön tasarım raporu 84 puan (baraj 64); ikinci aşama 103,29.',
     },
   },
   {
@@ -610,7 +579,7 @@ export const HONORS = [
 
 export const SKILLS = [
   { group: { en: 'Programming', tr: 'Programlama' }, items: ['Python', 'C++', 'Dart', 'JavaScript', 'SQL', 'C', 'C#', 'Java'] },
-  { group: { en: 'AI & vision', tr: 'Yapay zekâ ve görü' }, items: ['PyTorch', 'OpenCV', 'Ultralytics YOLO', 'SAM 2', 'DINOv3', 'Visual odometry (DPVO)', 'OCR', 'Kalman filtering'] },
+  { group: { en: 'AI & vision', tr: 'Yapay zekâ ve görü' }, items: ['PyTorch', 'OpenCV', 'Ultralytics YOLO', 'SAM 2', 'DINOv3', 'Visual odometry (DPVO)', 'Kalman filtering'] },
   { group: { en: 'Agents & LLMs', tr: 'Ajanlar ve LLM' }, items: ['LLM agents', 'RAG', 'Whisper', 'Z3', 'Claude Code'] },
   { group: { en: 'Mobile, web & data', tr: 'Mobil, web ve veri' }, items: ['Flutter', 'Riverpod', 'HTML / CSS / JS', 'Streamlit', 'PostgreSQL', 'SQLite', 'ChromaDB', 'FAISS'] },
   { group: { en: 'Tools', tr: 'Araçlar' }, items: ['Git / GitHub', 'Linux', 'CUDA', 'Conda', 'Android SDK / adb', 'n8n', 'LaTeX', 'Arduino'] },

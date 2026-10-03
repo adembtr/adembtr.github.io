@@ -82,16 +82,15 @@ function coverNode(p, forDialog = false) {
     return v;
   }
   if (c.type === 'image') {
-    const contain = p.id === 'road-safety';
-    return h('img', { src: c.src, alt: '', loading: 'lazy', class: contain ? 'contain' : '', width: 640, height: 360 });
+    return h('img', { src: c.src, alt: '', loading: 'lazy', width: 640, height: 360 });
   }
   return h('div', { class: 'tile', html: tileSVG(c.tile, p.accent) });
 }
 
 // ------------------------------------------------------------------ projects grid
 // display order and which cards take half the row (keeps the 12-column grid gap-free)
-const ORDER = ['nuron', 'dotnote', 'ghost-cursor', 'road-safety', 'arc-agi3', 'mathai', 'rag-pdf-qa', 'whisper-phone', 'servo-hand', 'library'];
-const SPAN6 = new Set(['nuron', 'dotnote', 'servo-hand', 'library']);
+const ORDER = ['nuron', 'dotnote', 'ghost-cursor', 'arc-agi3', 'mathai', 'rag-pdf-qa', 'whisper-phone', 'servo-hand', 'library'];
+const SPAN6 = new Set(['nuron', 'dotnote', 'ghost-cursor', 'arc-agi3', 'servo-hand', 'library']);
 const ORDERED = [...PROJECTS].sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
 
 function renderProjects() {
