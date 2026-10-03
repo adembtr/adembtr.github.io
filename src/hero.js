@@ -187,19 +187,9 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
   layout();
   new ResizeObserver(layout).observe(wrap);
 
-  // ------------------------------------------------------------ interaction
-  const target = { x: 0, y: 0 };
-  const cur = { x: 0, y: 0 };
-  let lastInput = performance.now();
-  const MAX_Y = THREE.MathUtils.degToRad(20), MAX_X = THREE.MathUtils.degToRad(12);
-  function onPointer(x, y) {
-    target.x = (x / innerWidth) * 2 - 1;
-    target.y = (y / innerHeight) * 2 - 1;
-    lastInput = performance.now();
-    if (reduced) requestRender();
-  }
-  addEventListener('pointermove', (e) => onPointer(e.clientX, e.clientY), { passive: true });
-  addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) onPointer(t.clientX, t.clientY); }, { passive: true });
+  // ------------------------------------------------------------ motion
+  // The portrait does not follow the pointer; it only sways gently (about ±2° side to side).
+  const SWAY_Y = THREE.MathUtils.degToRad(2), SWAY_X = THREE.MathUtils.degToRad(0.8);
 
   let scrollScatter = 0;
   function onScroll() {
@@ -228,15 +218,9 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
     uniforms.uScatter.value += (scatterTarget - uniforms.uScatter.value) * Math.min(1, dt * 6);
     uniforms.uTime.value = t;
 
-    // idle sway when the pointer has been still for a while
-    const idle = reduced ? 0 : THREE.MathUtils.clamp((now - lastInput - 1500) / 2500, 0, 1);
-    const swayY = Math.sin(t * 0.35) * 0.09 * idle;
-    const swayX = Math.cos(t * 0.27) * 0.04 * idle;
-    const ty = THREE.MathUtils.clamp(target.x * MAX_Y, -MAX_Y, MAX_Y) * (1 - idle * 0.5) + swayY;
-    const tx = THREE.MathUtils.clamp(target.y * MAX_X, -MAX_X, MAX_X) * (1 - idle * 0.5) + swayX;
-    cur.x += (tx - cur.x) * Math.min(1, dt * 4);
-    cur.y += (ty - cur.y) * Math.min(1, dt * 4);
-    group.rotation.set(cur.x, cur.y, 0);
+    // gentle sway only
+    const motion = reduced ? 0 : 1;
+    group.rotation.set(Math.cos(t * 0.27) * SWAY_X * motion, Math.sin(t * 0.35) * SWAY_Y * motion, 0);
     group.position.y += Math.sin(t * 0.6) * 0.0004 * (reduced ? 0 : 1);
 
     renderer.render(scene, camera);
