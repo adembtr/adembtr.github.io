@@ -164,7 +164,7 @@ export const UI = {
 
 export const LINKS = {
   github: 'https://github.com/adembtr',
-  linkedin: 'https://www.linkedin.com/in/adem-batur-652188265',
+  linkedin: 'https://www.linkedin.com/in/adembatur',
   email: 'baturadem09@gmail.com',
   elifapps: 'https://elifapps.com/',
   dotnote: 'https://elifapps.com/apps/dotnote/',
