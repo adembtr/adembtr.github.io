@@ -149,7 +149,7 @@ if (mode === 'all' || mode === 'shots') {
       }
       void dlgLinks;
       // media files
-      for (const f of ['/assets/cloud/portrait_100k.bin', '/assets/cloud/portrait_60k.bin', '/assets/pdf/Adem_Batur_CV.pdf', '/og.png', '/sitemap.xml', '/robots.txt', '/favicon.svg', '/favicon.png', '/apple-touch-icon.png', '/404.html', '/assets/img/portrait_cloud.webp']) {
+      for (const f of ['/assets/cloud/portrait_3d_hi.bin', '/assets/cloud/portrait_3d_lo.bin', '/assets/pdf/Adem_Batur_CV.pdf', '/og.png', '/sitemap.xml', '/robots.txt', '/favicon.svg', '/favicon.png', '/apple-touch-icon.png', '/404.html', '/assets/img/portrait_cloud.webp']) {
         const code = await status(BASE + f); if (code >= 400 || code === 0) problems.push(`asset ${f} -> ${code}`);
       }
     }

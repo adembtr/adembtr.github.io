@@ -13,6 +13,7 @@ const VERT = /* glsl */ `
   varying float vShimmer;
   varying float vSeed;
   varying float vScatter;
+  varying float vFacing;
 
   float hash(float n) { return fract(sin(n) * 43758.5453123); }
 
@@ -35,6 +36,9 @@ const VERT = /* glsl */ `
 
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
+    // outward normal in view space -> back-face culling and soft shading of the solid head
+    vec3 nv = normalize(normalMatrix * normal);
+    vFacing = dot(nv, normalize(-mv.xyz));
 
     vShimmer = 0.9 + 0.22 * sin(t * 1.7 + aSeed * 41.0) * (0.3 + 0.7 * h3);
     vSeed = aSeed;
@@ -52,6 +56,7 @@ const FRAG = /* glsl */ `
   varying float vShimmer;
   varying float vSeed;
   varying float vScatter;
+  varying float vFacing;
 
   float hash(float n) { return fract(sin(n) * 43758.5453123); }
 
@@ -59,12 +64,14 @@ const FRAG = /* glsl */ `
     vec2 c = gl_PointCoord - 0.5;
     float d = dot(c, c);
     if (d > 0.25) discard;
+    if (vScatter < 0.6 && vFacing < -0.06) discard;   // points on the far side of the head
     // dithered reveal / fade, which keeps the depth buffer honest (no sorting needed)
     float gate = hash(vSeed * 1.73);
     if (gate > uReveal) discard;
     float fade = 1.0 - smoothstep(0.35, 1.0, vScatter);
     if (hash(vSeed * 5.31) > fade) discard;
-    vec3 col = vColor * vShimmer;
+    float shade = mix(0.66, 1.0, sqrt(clamp(vFacing, 0.0, 1.0)));
+    vec3 col = vColor * vShimmer * mix(shade, 1.0, vScatter);
     // tiny warm glint on scattered particles
     col = mix(col, vec3(1.0, 0.86, 0.55), vScatter * 0.35 * hash(vSeed * 9.9));
     gl_FragColor = vec4(col, 1.0);
@@ -80,18 +87,21 @@ function hasWebGL() {
   }
 }
 
-function parseABPC(buf) {
+function parseCloud(buf) {
   const dv = new DataView(buf);
   const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
-  if (magic !== 'ABPC') throw new Error('bad point cloud file');
+  if (magic !== 'ABP2') throw new Error('bad point cloud file');
   const count = dv.getUint32(4, true);
-  const posOffset = 12;
+  const frontCount = dv.getUint32(8, true);
+  const posOffset = 16;
   const colOffset = posOffset + count * 6;
+  const nrmOffset = colOffset + count * 3;
   const i16 = new Int16Array(buf.slice(posOffset, colOffset));
-  const rgb = new Uint8Array(buf.slice(colOffset, colOffset + count * 3));
+  const rgb = new Uint8Array(buf.slice(colOffset, nrmOffset));
+  const nrm = new Int8Array(buf.slice(nrmOffset, nrmOffset + count * 3));
   const pos = new Float32Array(count * 3);
   for (let i = 0; i < count * 3; i++) pos[i] = i16[i] / 32767;
-  return { count, pos, rgb };
+  return { count, frontCount, pos, rgb, nrm };
 }
 
 export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }) {
@@ -107,13 +117,13 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
   const small = innerWidth < 760;
   const lowEnd = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory && navigator.deviceMemory <= 4);
   const useLOD = small || lowEnd;
-  const url = useLOD ? '/assets/cloud/portrait_60k.bin' : '/assets/cloud/portrait_100k.bin';
+  const url = useLOD ? '/assets/cloud/portrait_3d_lo.bin' : '/assets/cloud/portrait_3d_hi.bin';
 
   let data;
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(res.status);
-    data = parseABPC(await res.arrayBuffer());
+    data = parseCloud(await res.arrayBuffer());
   } catch (e) {
     console.warn('point cloud unavailable', e);
     showFallback();
@@ -135,6 +145,7 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(data.pos, 3));
   geo.setAttribute('color', new THREE.BufferAttribute(data.rgb, 3, true));
+  geo.setAttribute('normal', new THREE.BufferAttribute(data.nrm, 3, true));
   const seeds = new Float32Array(data.count);
   for (let i = 0; i < data.count; i++) seeds[i] = (i * 0.618033988749895) % 1;
   geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
@@ -181,7 +192,7 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
     const dpr = renderer.getPixelRatio();
     const pxPerUnit = (h * dpr) / (2 * dist * Math.tan(vfov / 2));
     const bustArea = 2 * pxPerUnit * 2.2 * pxPerUnit * 0.55;
-    const wanted = 1.3 * Math.sqrt(bustArea / data.count);          // device px per point
+    const wanted = 1.3 * Math.sqrt(bustArea / (data.frontCount * 0.6)); // device px per point (front sheet, arc-length sampled)
     uniforms.uSize.value = THREE.MathUtils.clamp(wanted / (dpr * (3.2 / dist) * 1.1), 1.2, 7);
   }
   layout();
@@ -191,15 +202,30 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
   const target = { x: 0, y: 0 };
   const cur = { x: 0, y: 0 };
   let lastInput = performance.now();
-  const MAX_Y = THREE.MathUtils.degToRad(20), MAX_X = THREE.MathUtils.degToRad(12);
+  const MAX_Y = THREE.MathUtils.degToRad(50), MAX_X = THREE.MathUtils.degToRad(12), MAX_TOTAL = THREE.MathUtils.degToRad(62);
+  let dragYaw = 0, dragging = false, dragStartX = 0, dragStartYaw = 0;
   function onPointer(x, y) {
     target.x = (x / innerWidth) * 2 - 1;
     target.y = (y / innerHeight) * 2 - 1;
     lastInput = performance.now();
     if (reduced) requestRender();
   }
-  addEventListener('pointermove', (e) => onPointer(e.clientX, e.clientY), { passive: true });
-  addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) onPointer(t.clientX, t.clientY); }, { passive: true });
+  addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
+    onPointer(e.clientX, e.clientY);
+    if (dragging) dragYaw = dragStartYaw + ((e.clientX - dragStartX) / innerWidth) * 2.4;
+  }, { passive: true });
+  wrap.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') return; dragging = true; dragStartX = e.clientX; dragStartYaw = dragYaw; });
+  addEventListener('pointerup', () => { dragging = false; });
+  // touch: a horizontal swipe on the hero turns the head; vertical scrolling is untouched (touch-action: pan-y)
+  wrap.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t) { dragStartX = t.clientX; dragStartYaw = dragYaw; lastInput = performance.now(); } }, { passive: true });
+  wrap.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    if (!t) return;
+    dragYaw = dragStartYaw + ((t.clientX - dragStartX) / innerWidth) * 2.4;
+    lastInput = performance.now();
+    if (reduced) requestRender();
+  }, { passive: true });
 
   let scrollScatter = 0;
   function onScroll() {
@@ -228,14 +254,15 @@ export async function initHero({ canvas, wrap, fallbackImg, onReady, onNoWebGL }
     uniforms.uScatter.value += (scatterTarget - uniforms.uScatter.value) * Math.min(1, dt * 6);
     uniforms.uTime.value = t;
 
-    // idle sway when the pointer has been still for a while
-    const idle = reduced ? 0 : THREE.MathUtils.clamp((now - lastInput - 1500) / 2500, 0, 1);
-    const swayY = Math.sin(t * 0.35) * 0.09 * idle;
-    const swayX = Math.cos(t * 0.27) * 0.04 * idle;
-    const ty = THREE.MathUtils.clamp(target.x * MAX_Y, -MAX_Y, MAX_Y) * (1 - idle * 0.5) + swayY;
-    const tx = THREE.MathUtils.clamp(target.y * MAX_X, -MAX_X, MAX_X) * (1 - idle * 0.5) + swayX;
-    cur.x += (tx - cur.x) * Math.min(1, dt * 4);
-    cur.y += (ty - cur.y) * Math.min(1, dt * 4);
+    // slow auto-sway when the pointer has been still for a while; the drag offset eases back
+    const idle = reduced ? 0 : THREE.MathUtils.clamp((now - lastInput - 2000) / 3000, 0, 1);
+    const swayY = Math.sin(t * 0.26) * 0.62 * idle;
+    const swayX = Math.cos(t * 0.19) * 0.05 * idle;
+    if (!dragging) dragYaw *= Math.max(0, 1 - dt * 0.35);
+    const ty = THREE.MathUtils.clamp(THREE.MathUtils.clamp(target.x * MAX_Y, -MAX_Y, MAX_Y) * (1 - idle) + swayY + dragYaw, -MAX_TOTAL, MAX_TOTAL);
+    const tx = THREE.MathUtils.clamp(target.y * MAX_X, -MAX_X, MAX_X) * (1 - idle * 0.6) + swayX;
+    cur.x += (tx - cur.x) * Math.min(1, dt * 3.2);
+    cur.y += (ty - cur.y) * Math.min(1, dt * 3.2);
     group.rotation.set(cur.x, cur.y, 0);
     group.position.y += Math.sin(t * 0.6) * 0.0004 * (reduced ? 0 : 1);
 
